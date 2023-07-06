@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	 <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>PDF To Canvas Viewer</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.943/pdf.min.js"></script>
+<style type="text/css">
+    #vk_pdf_viewer{
+        width: 905px;
+        margin: auto;
+        height: auto;
+    }
+    #canvas_container{
+        width: 892px;
+        margin: auto;
+        height: auto;
+        overflow: auto;
+        background: #333;
+        text-align: center;
+        border: solid 3px #f5622e;
+    }
+    #current_page{
+        width: 30px;
+        height: 21px;
+        border-radius: 0px;
+        border: 2px solid #f5622e;
+        text-align: center;
+    }
+    .zoom{
+        background-color: #f4511e;
+        border: none;
+        color: #FFFFFF;
+        text-align: center;
+        transition: all 0.5s;
+        cursor: pointer;
+        padding: 5px;
+        width: 30px;
+    }
+    .Previous {
+  background-color: #f4511e;
+  border: none;
+  color: #FFFFFF;
+  text-align: center;
+  transition: all 0.5s;
+  cursor: pointer;
+  padding: 5px;
+  width: 90px;
+}
+
+.Previous span {
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+  transition: 0.5s;
+}
+
+.Previous span:after {
+  content: '\00ab';
+  position: absolute;
+  opacity: 0;
+  top: 0;
+  left: -65px;
+  transition: 0.5s;
+}
+
+.Previous:hover span {
+  padding-left: 15px;
+}
+.Previous:hover span:after{
+    opacity: 1;
+    right: 0;
+}
+
+.Next {
+  background-color: #f4511e;
+  border: none;
+  color: #FFFFFF;
+  text-align: center;
+  transition: all 0.5s;
+  cursor: pointer;
+  padding: 5px;
+  width: 90px;
+}
+
+.Next span {
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+  transition: 0.5s;
+}
+
+.Next span:after {
+  content: '\00bb';
+  position: absolute;
+  opacity: 0;
+  top: 0;
+  right: -20px;
+  transition: 0.5s;
+}
+
+.Next:hover span {
+  padding-right: 25px;
+}
+.Next:hover span:after{
+    opacity: 1;
+    right: 0;
+}
+</style>
+</head>
+
+<body>
+<h1 style="text-align: center;">Pdf To Canvas Viewer</h1>
+<div id="vk_pdf_viewer">
+ <table width="100%" border="0">
+  <tr>
+    <td align="left">
+    <div id="navigation_controls">
+            <button id="go_previous" class="Previous"><span>Previous </span></button>
+            <input id="current_page" value="1" type="text" readonly="true"/>
+            <button id="go_next" class="Next"><span>Next </span></button>
+    </div>
+    </td>
+    <td align="right">
+        <div id="zoom_controls">  
+            <button id="zoom_in" class="zoom">+</button>
+            <button id="zoom_out" class="zoom">-</button>
+        </div>
+    </td>
+  </tr>
+ </table>
+  <div id="canvas_container">
+    <canvas id="pdf_renderer"></canvas>    
+  </div>
+</div>
+
+<script type="text/javascript">
+  var myState = {
+    pdf:null,
+    currentPage:1,
+    zoom:1
+  }  
+
+  //get pdf file
+  pdfjsLib.getDocument('pdf/sbi.pdf').then((pdf) => {
+    myState.pdf = pdf;
+    render();
+
+  }); 
+//pdf page previous & next function
+document.getElementById('go_previous').addEventListener('click', (e) =>{
+    if(myState.pdf == null || myState.currentPage == 1)
+        return;
+    myState.currentPage -=1;
+    document.getElementById('current_page').value = myState.currentPage;
+    render();
+
+});
+document.getElementById('go_next').addEventListener('click', (e) =>{
+    if(myState.pdf == null || myState.currentPage > myState.pdf._pdfInfo.numPages)
+        return;
+    myState.currentPage +=1;
+    document.getElementById('current_page').value = myState.currentPage;
+    render();
+
+});
+
+
+//current page function
+document.getElementById('current_page').addEventListener('keypress', (e) => {
+    if(myState.pdf == null) return;
+    var code = (e.keyCode ? e.keyCode : e.which);
+    if (code == 13){
+        var desiredPage = document.getElementById('current_page').valueAsNumber;
+        if(desiredPage >= 1 && desiredPage <= myState.pdf._pdfInfo.numPages){
+            myState.currentPage = desiredPage;
+            document.getElementById("current_page").value=desiredPage;
+            render();
+
+        }
+
+    }
+
+});
+
+
+// zoom in & out function
+document.getElementById('zoom_in').addEventListener( 'click',(e) => {
+    if(myState.pdf == null) return;
+    myState.zoom += 0.5;
+    render();
+});
+document.getElementById('zoom_out').addEventListener( 'click',(e) => {
+    if(myState.pdf == null) return;
+    myState.zoom -= 0.5;
+    render();
+});
+
+
+  // pdf file render function
+ function render(){
+    myState.pdf.getPage(myState.currentPage).then((page) => {
+        var canvas = document.getElementById("pdf_renderer");
+        var ctx = canvas.getContext('2d');
+        var viewport = page.getViewport(myState.zoom);
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        page.render({
+            canvasContext:ctx,
+            viewport:viewport
+        });
+
+    });
+
+ }
+</script>
+</body>
+</html>
